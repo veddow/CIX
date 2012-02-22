@@ -1,20 +1,111 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Xml;
 using System.Net;
 using System.IO;
+using System.Web;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Timers;
 
 
 namespace ScreenSaver
 {
     public partial class ScreenSaverForm : Form
     {
+        //creates a new struct called NewsItem
+        //a NewsItem consists of a title, description and link
+        public struct NewsItem
+        {
+            private string _title;
+            public string title
+            {
+                get
+                {
+                    return _title;
+                }
+                set
+                {
+                    _title = value;
+                }
+            }
+
+            private string _link;
+            public string link
+            {
+                get
+                {
+                    return _link;
+                }
+                set
+                {
+                    _link = value;
+                }
+            }
+
+            private string _description;
+            public string description
+            {
+                get
+                {
+                    return _description;
+                }
+                set
+                {
+                    _description = value;
+                }
+            }
+        }
+
+        public class Conditions
+        {
+            string dayOfWeek = DateTime.Now.DayOfWeek.ToString();
+            string condition = "No Data";
+            string tempF = "No Data";
+            string wind = "No Data";
+            string high = "No Data";
+            string low = "No Data";
+
+            public string Condition
+            {
+                get { return condition; }
+                set { condition = value; }
+            }
+
+            public string TempF
+            {
+                get { return tempF; }
+                set { tempF = value; }
+            }
+
+            public string Wind
+            {
+                get { return wind; }
+                set { wind = value; }
+            }
+
+            public string DayOfWeek
+            {
+                get { return dayOfWeek; }
+                set { dayOfWeek = value; }
+            }
+
+            public string High
+            {
+                get { return high; }
+                set { high = value; }
+            }
+
+            public string Low
+            {
+                get { return low; }
+                set { low = value; }
+            }
+        }
+
         //the following imports several Windows APIs for later use
         [DllImport("user32.dll")]
         static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
@@ -32,6 +123,11 @@ namespace ScreenSaver
         private bool previewMode = false;
         private Random rand = new Random();
         private Point mouseLocation;
+        int optionalItemCounter;
+        int colemanItemCounter;
+        List<NewsItem> colemanItems = new List<NewsItem>();
+        List<NewsItem> optionalItems = new List<NewsItem>();
+
 
         //constructor that sets the form's bounds
         public ScreenSaverForm(Rectangle Bounds)
@@ -46,6 +142,7 @@ namespace ScreenSaver
         public ScreenSaverForm(IntPtr PreviewHandle)
         {
             InitializeComponent();
+            //LoadSettings();
 
             //set the preview window as the parent of this window
             SetParent(this.Handle, PreviewHandle);
@@ -61,142 +158,493 @@ namespace ScreenSaver
             Location = new Point(0, 0);
 
             //makes the text smaller for the preview screen
-            textLabel.Font = new System.Drawing.Font("Calisto MT", 6);
+            lblTitle2.Font = new System.Drawing.Font("Calisto MT", 6);
+            lblDescription2.Font = new System.Drawing.Font("Calisto MT", 6);
 
             previewMode = true;
         }
 
-         private Stream RssFeed()
-         {
-            // used to build entire input
-            StringBuilder sb = new StringBuilder();
+        //This function creates a regular expression that identifies html markup within RSS elements
+        //The markup is erased so that it does not show up in the output
+        private string ignoreHTML(string htmlText)
+        {
+            Regex reg = new Regex("<[^>]+>", RegexOptions.IgnoreCase);
+            return reg.Replace(htmlText, string.Empty);
+        }
 
-            // used on each read operation
-            byte[] buf = new byte[8192];
 
-            // prepare the web page we will be asking for
+        //Reads and returns the XML file from the specified URL
+        private Stream getOptionalNews()
+        {
+             //gets the channel's URL configured in the settings by the user
+             Microsoft.Win32.RegistryKey stringKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("SOFTWARE\\Demo_ScreenSaver");
+            
+             //string optionalUrl2 = (string)stringKey.GetValue("channel2Url");
+
+             //if (optionalUrl2 == "" || optionalUrl2 == null)
+             //{
+             //    optionalUrl2 = "http://www.utsandiego.com/rss/headlines/metro/";
+             //}
+
+             string optionalUrl2;
+             try
+             {
+                 optionalUrl2 = (string)stringKey.GetValue("channel2Url");
+             }
+             catch (Exception o)
+             {
+                 optionalUrl2 = "http://www.utsandiego.com/rss/headlines/metro/";
+                 MessageBox.Show(o.Message);
+             }
+
+            //prepare the web page we will be asking for
             HttpWebRequest request = (HttpWebRequest)
-                WebRequest.Create("https://linuxsandbox.coleman.edu/~pm34860/1-16-2012H8M16S31.xml");
+                WebRequest.Create(optionalUrl2);
 
-            // execute the request
+            //execute the request
             HttpWebResponse response = (HttpWebResponse)
                 request.GetResponse();
 
-            // we will read data via the response stream
-            Stream resStream = response.GetResponseStream();
-
-            string Response = null;
-            int count = 0;
-
-            while (count > 0)
-            {
-                // fill the buffer with data
-                count = resStream.Read(buf, 0, buf.Length);
-
-                // read data until there is none left to read
-                if (count != 0)
-                {
-                    // translate from bytes to UTF8 text
-                    Response = Encoding.UTF8.GetString(buf, 0, count);
-
-                    // continue building the string
-                    sb.Append(Response);
-
-                    // build and printvthe toString
-                    //Console.WriteLine(sb.ToString());
-                    count++;
-                }
-            }
-
-            return resStream;
-           
+            //read data via the response stream
+            Stream optionalStream = response.GetResponseStream();
+            
+            //return the xml data in the form of a stream
+            return optionalStream;
         }
 
         //read XML file
-        private void XmlReader()
+        private void readOptionalNews()
         {
-            XmlTextReader reader = new XmlTextReader(RssFeed());
+            string title;
+            string link;
+            string description;
+            
+            //creates a new XmlTextReader object called reader using stream returned by getNews()
+            XmlTextReader reader = new XmlTextReader(getOptionalNews());
+           
+            while (reader.Read())
+            {
+                if (reader.NodeType == XmlNodeType.Element)
+                {
+                    switch (reader.Name)
+                    {
+                        case "title":
+                            title = reader.ReadString();
+                            break;
+                        case "link":
+                            link = reader.ReadString();
+                            break;
+                        case "description":
+                            description = reader.ReadString();
+                            break;
+                    }
+                }
+
+                if (reader.Name == "item")
+                {
+                    //create a new item to be added to the List of NewsItems
+                    NewsItem item = new NewsItem();
+                    while (!((reader.Name == "item") &&
+                                (reader.NodeType == XmlNodeType.EndElement)) &&
+                                    reader.Read())
+                    {
+                        if (reader.NodeType == XmlNodeType.Element)
+                        {
+                            //populate item's title, description and link properties
+                            switch (reader.Name.ToLower())
+                            {
+                                case "title":
+                                    item.title = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "description":
+                                    item.description = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "link":
+                                    item.link = ignoreHTML(reader.ReadString());
+                                    break;
+                            }
+                        }
+                    }
+                    //add item to the List of NewsItems
+                    optionalItems.Add(item); 
+                }
+            }
+
+            //display the title and description of the first index
+            //the most recent items are placed at the beginning of the List items
+            //lblArticle1.Text = items[0].title.ToString() + "\n" + items[0].description.ToString();
+            lblTitle2.Text = optionalItems[optionalItemCounter].title.ToString();
+            lblDescription2.Text = optionalItems[optionalItemCounter].description.ToString();
+            optionalItemCounter = 1;
+        }
+
+        //Reads and returns the XML file from the specified URL
+        private Stream getColemanNews()
+        {
+            //gets the channel's URL configured in the settings by the user
+            Microsoft.Win32.RegistryKey stringKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("SOFTWARE\\Demo_ScreenSaver");
+
+            //string colemanUrl1 = (string)stringKey.GetValue("channelUrl");
+            //if (colemanUrl1 == "" || colemanUrl1 == null)
+            //{
+            //    colemanUrl1 = "http://172.16.25.167:8080/datafiles/StudentChannel.xml";
+            //}
+            string colemanUrl1;
+            try
+            {
+                colemanUrl1 = (string)stringKey.GetValue("channelUrl");
+            }
+            catch (Exception c)
+            {
+                colemanUrl1 = "http://172.16.25.167:8080/datafiles/StudentChannel.xml";
+                MessageBox.Show(c.Message);
+            }
+           
+
+            //prepare the web page we will be asking for
+            HttpWebRequest request = (HttpWebRequest)
+                WebRequest.Create(colemanUrl1);
+
+            //execute the request
+            HttpWebResponse response = (HttpWebResponse)
+                request.GetResponse();
+
+            //read data via the response stream
+            Stream colemanStream = response.GetResponseStream();
+
+            //return the xml data in the form of a stream
+            return colemanStream;
+        }
+
+        //read XML file
+        private void readColemanNews()
+        {
+            string title;
+            string link;
+            string description;
+
+            //creates a new XmlTextReader object called reader using stream returned by getNews()
+            XmlTextReader reader = new XmlTextReader(getColemanNews());
 
             while (reader.Read())
             {
-                switch (reader.NodeType)
+                if (reader.NodeType == XmlNodeType.Element)
                 {
-                        case XmlNodeType.Element: // The node is an element.
-                            //MessageBox.Show("<" + reader.Name);
-                            //MessageBox.Show(">");
-                            //MessageBox.Show(reader.Value);
+                    switch (reader.Name)
+                    {
+                        case "title":
+                            title = reader.ReadString();
                             break;
-                        case XmlNodeType.Text: //Display the text in each element.
-                            //i++;
-                            //if (i == 2)      //2 because Hello is in second node.
-                            //{
-                                //MessageBox.Show(reader.Value); //will show Hello
-                                textLabel.Text = reader.Value;
-                           // }
+                        case "link":
+                            link = reader.ReadString();
                             break;
-                        case XmlNodeType.EndElement: //Display the end of the element.
-                            //Console.Write("</" + reader.Name);
-                            //MessageBox.Show(">");
+                        case "description":
+                            description = reader.ReadString();
                             break;
+                    }
+                }
+
+                if (reader.Name == "item")
+                {
+                    //create a new item to be added to the List of NewsItems
+                    NewsItem item = new NewsItem();
+                    while (!((reader.Name == "item") &&
+                                (reader.NodeType == XmlNodeType.EndElement)) &&
+                                    reader.Read())
+                    {
+                        if (reader.NodeType == XmlNodeType.Element)
+                        {
+                            //populate item's title, description and link properties
+                            switch (reader.Name.ToLower())
+                            {
+                                case "title":
+                                    item.title = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "description":
+                                    item.description = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "link":
+                                    item.link = ignoreHTML(reader.ReadString());
+                                    break;
+                            }
+                        }
+                    }
+                    //add item to the List of NewsItems
+                    colemanItems.Add(item);
                 }
             }
+
+            //display the title and description of the first index
+            //the most recent items are placed at the beginning of the List items
+            lblTitle1.Text = colemanItems[colemanItemCounter].title.ToString();
+            lblDescription1.Text = colemanItems[colemanItemCounter].description.ToString();
+            colemanItemCounter = 1;
         }
-        
-        //loads the Registry values
-        //also hides the cursor and brings the window to the front 
-        private void LoadSettings()
+
+
+        //uses an instance of the Conditions class to store the actual values and then returns the instance with the values in it
+        public static Conditions GetCurrentConditions()
         {
+            Conditions conditions = new Conditions();
+
+            XmlDocument xmlConditions = new XmlDocument();
+            xmlConditions.Load("http://www.google.com/ig/api?weather=92123");
+
+            //makes sure the data returned is valid
+            if (xmlConditions.SelectSingleNode("xml_api_reply/weather/problem_cause") != null)
+            {
+                conditions = null;
+            }
+            else
+            {
+                conditions.Condition = xmlConditions.SelectSingleNode("/xml_api_reply/weather/current_conditions/condition").Attributes["data"].InnerText;
+                conditions.TempF = xmlConditions.SelectSingleNode("/xml_api_reply/weather/current_conditions/temp_f").Attributes["data"].InnerText;
+                conditions.Wind = xmlConditions.SelectSingleNode("/xml_api_reply/weather/current_conditions/wind_condition").Attributes["data"].InnerText; 
+            }
+            return conditions;
+        }
+
+        //gets the forecast for a specified location and returns a list of Conditions
+        public static List<Conditions> GetForecast()
+        {
+            List<Conditions> conditions = new List<Conditions>();
+
+            XmlDocument xmlConditions = new XmlDocument();
+            xmlConditions.Load("http://www.google.com/ig/api?weather=92123");
+
+            if (xmlConditions.SelectSingleNode("xml_api_reply/weather/problem_cause") != null)
+            {
+                conditions = null;
+            }
+            else
+            {
+                foreach (XmlNode node in xmlConditions.SelectNodes("/xml_api_reply/weather/forecast_conditions"))
+                {
+                    Conditions condition = new Conditions();
+                    condition.Condition = node.SelectSingleNode("condition").Attributes["data"].InnerText;
+                    condition.High = node.SelectSingleNode("high").Attributes["data"].InnerText;
+                    condition.Low = node.SelectSingleNode("low").Attributes["data"].InnerText;
+                    condition.DayOfWeek = node.SelectSingleNode("day_of_week").Attributes["data"].InnerText;
+                    conditions.Add(condition);
+                }
+            }
+            return conditions;
+        }
+
+        public void getWeather()
+        {
+            Conditions current = GetCurrentConditions();
+            List<Conditions> forecast = GetForecast();
+            char degree = (char)176;
+
+            lblWeatherStatus.Text = forecast[0].Condition;
+            lblCurrentWeather.Text = "Currently: " + current.TempF + degree;
+            lblHigh.Text = "High: " + forecast[0].High + degree;
+            lblLow.Text = "Low: " + forecast[0].Low + degree;
+            lblTomorrowStatus.Text = forecast[1].Condition;
+            lblTomorrowTemps.Text = "High: " + forecast[1].High + degree + " / Low: " + forecast[1].Low + degree;
+            switch (current.Condition.ToLower())
+            {
+                case "sunny":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Sunny;
+                    break;
+                case "mostly sunny":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.MostlySunny;
+                    break;
+                case "partly cloudy":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.PartlyCloudy;
+                    break;
+                case "mostly cloudy":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Cloudy;
+                    break;
+                case "overcast":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Cloudy;
+                    break;
+                case "chance of storm":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.ChanceOfStorm;
+                    break;
+                case "rain":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Rain;
+                    break;
+                case "chance of rain":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.ChanceOfRain;
+                    break;
+                case "chance of snow":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Flurries;
+                    break;
+                case "mist":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.MostlySunny;
+                    break;
+                case "cloudy":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Cloudy;
+                    break;
+                case "storm":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.ThunderStorm;
+                    break;
+                case "thunderstorm":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.ThunderStorm;
+                    break;
+                case "chance of tstorm":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.ChanceOfStorm;
+                    break;
+                case "chance of thunderstorm":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.ChanceOfStorm;
+                    break;
+                case "sleet":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Snow;
+                    break;
+                case "snow":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Snow;
+                    break;
+                case "icy":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Icy;
+                    break;
+                case "dust":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Haze;
+                    break;
+                case "fog":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Haze;
+                    break;
+                case "smoke":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Haze;
+                    break;
+                case "haze":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Haze;
+                    break;
+                case "flurries":
+                    picWeatherIcon.Image = ScreenSaver.Properties.Resources.Flurries;
+                    break;
+            }
+            
+        }
+
+        //loads the Registry values, hides the cursor and brings the window to the front 
+        private void loadSettings()
+        {
+            analogClock.Enabled = !analogClock.Enabled;
             Cursor.Hide();
             TopMost = true;
-           
-
-            // Get the text value stored in the Registry
-            //Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("SOFTWARE\\Demo_ScreenSaver");
-            //if (key.GetValue("text") == null)
-            //{
-            //    textLabel.Text = "Our Screensaver";
-            //}
-            //else
-            //{
-            //    textLabel.Text = (string)key.GetValue("text");
-            //}
 
             //get the interval value stored in the Registry
             Microsoft.Win32.RegistryKey intervalKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("SOFTWARE\\Demo2_ScreenSaver");
-            int interval = (int)intervalKey.GetValue("interval");
+            int interval;
+            try
+            {
+                interval = (int)intervalKey.GetValue("interval");
+            }
+            catch (Exception i)
+            {
+                intervalKey.SetValue("interval", 0);
+                interval = (int)intervalKey.GetValue("interval");
+                MessageBox.Show(i.Message);
+            }
             if (interval == -1)
             {
-                //default to 1000 milliseconds
-                moveTimer.Interval = 1000;
+                //default to 30000 milliseconds (30 seconds)
+                moveTimer.Interval = 30000;
             }
             else
             {
                 //interval holds the selectedIndex of intervalComboBox
-                //add 1 to the index and multiply by 1000 to get the desired number of milliseconds
-               moveTimer.Interval = 1000 * (interval + 1);
+                //configuration settings allow user to set rotation speed in 30 second intervals, so
+                //add 1 to the index and multiply by 30000 to get the desired number of milliseconds
+               moveTimer.Interval = 5000 * (interval + 1);
             }
-
-            //TODO: call readXML();
-            XmlReader();
-
-
-            //call moveTimer_Tick every 1000 milliseconds (1 second)
+            try
+            {
+                readOptionalNews();
+            }
+            
+            catch (Exception of)
+            {
+                lblDescription2.ForeColor = System.Drawing.Color.White;
+                lblDescription2.Text = "Error connecting to this news feed";
+                lblTitle2.Visible = false;
+                MessageBox.Show(of.Message);
+            }
+            try
+            {
+                readColemanNews();
+            }
+            catch (Exception cf)
+            {
+                lblDescription1.ForeColor = System.Drawing.Color.White;
+                lblDescription1.Text = "Error connecting to this news feed";
+                lblTitle1.Visible = false;
+                MessageBox.Show(cf.Message);
+            }
+            try
+            {
+                getWeather();
+            }
+            catch (Exception w)
+            {
+                lblWeatherStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 12);
+                lblWeatherStatus.Text = "Error connecting to Weather";
+                lblCurrentWeather.Font = new System.Drawing.Font("Microsoft Sans Serif", 12);
+                lblCurrentWeather.Text = "We're going to guess it's sunny...";
+                grpTomorrow.Visible = false;
+               
+                lblHigh.Visible = false;
+                lblLow.Visible = false;
+                MessageBox.Show(w.Message);
+            }
+            
             moveTimer.Tick += new EventHandler(moveTimer_Tick);
             moveTimer.Start();
         }
-        
+
         private void ScreenSaverForm_Load(object sender, EventArgs e)
         {
-            LoadSettings();
+            loadSettings();
         }
 
-        //randomly moves the text to a new location at the specified timer interval
+        //rotates to the next article at the specified timer interval
+        //will also update the weather
         private void moveTimer_Tick(object sender, System.EventArgs e)
-	    {
-	        // Move text to new location
-	        textLabel.Left = rand.Next(Math.Max(1, Bounds.Width - textLabel.Width));
-	        textLabel.Top = rand.Next(Math.Max(1, Bounds.Height - textLabel.Height));           
-	    }
+        {
+            int maxIndex = (colemanItems.Count - 1);
+            int max = (optionalItems.Count - 1);
+
+            try
+            {
+                getWeather();
+            }
+            catch (Exception w)
+            {
+                lblWeatherStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 12);
+                lblWeatherStatus.Text = "Error connecting to Weather";
+                lblCurrentWeather.Font = new System.Drawing.Font("Microsoft Sans Serif", 12);
+                lblCurrentWeather.Text = "We're going to guess it's sunny...";
+                grpTomorrow.Visible = false;
+
+                lblHigh.Visible = false;
+                lblLow.Visible = false;
+                MessageBox.Show(w.Message);
+            }
+
+            if (optionalItemCounter > max)
+            {
+                optionalItemCounter = 0;
+            }
+            else
+            {
+                lblTitle2.Text = optionalItems[optionalItemCounter].title.ToString();
+                lblDescription2.Text = optionalItems[optionalItemCounter].description.ToString();
+                optionalItemCounter++;
+            }
+
+            if (colemanItemCounter > maxIndex)
+            {
+                colemanItemCounter = 0;
+            } 
+            else
+            {
+                lblTitle1.Text = colemanItems[colemanItemCounter].title.ToString();
+                lblDescription1.Text = colemanItems[colemanItemCounter].description.ToString();
+                colemanItemCounter++;
+            }  
+        }
 
         //terminates the screensaver when the mouse is moved more than 5 points
         private void ScreenSaverForm_MouseMove(object sender, MouseEventArgs e)

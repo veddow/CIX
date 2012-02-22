@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
@@ -53,7 +53,7 @@ namespace ScreenSaver
                     //was not provided
                     if (secondArg == null)
                     {
-                        MessageBox.Show("I'm sorry, the expected window handle was not received", 
+                        MessageBox.Show("I'm sorry, the expected window handle was not received",
                             "ScreenSaver", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         return;
                     }
@@ -78,7 +78,7 @@ namespace ScreenSaver
                         "ScreenSaver", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
             }
-            
+
             //no arguments were passed in through the command line
             //treat like /c
             else
@@ -91,10 +91,10 @@ namespace ScreenSaver
         {
             //allows multi-screen display
             foreach (Screen screen in Screen.AllScreens)
-	        {
-	            ScreenSaverForm screensaver = new ScreenSaverForm(screen.Bounds);
-	            screensaver.Show();
-	        }  
+            {
+                ScreenSaverForm screensaver = new ScreenSaverForm(screen.Bounds);
+                screensaver.Show();
+            }
         }
     }
 }

@@ -10,68 +10,197 @@ namespace ScreenSaver
 {
     public partial class SettingsForm : Form
     {
+        
         public SettingsForm()
         {
             InitializeComponent();
+            
             //ensures the SettingsForm initially displays whatever is stored in the Registry
-            LoadSettings();
+            loadSettings();
         }
 
         private void SettingsForm_Load(object sender, EventArgs e)
         {
-
         }
 
         //stores the screensaver settings in the Windows Registry
-        private void SaveSettings()
+        private void saveSettings()
 	    {
-	        // Create or get existing Registry subkey
-            // The key will be different for each user, so each user can customize
-            // this screensaver with different text
-            Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("SOFTWARE\\Demo_ScreenSaver");
-            //key.SetValue("text", textBox.Text);
-            key.SetValue("url", urlTextBox.Text);
-            Microsoft.Win32.RegistryKey intervalKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("SOFTWARE\\Demo2_ScreenSaver");
-            intervalKey.SetValue("interval", (int)intervalComboBox.SelectedIndex);
-	    }
-	 
-	    private void LoadSettings()
-	    {
-	        // Get the text value stored in the Registry
-            Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("SOFTWARE\\Demo_ScreenSaver");
-            if (key.GetValue("text") == null)
+            // Create or get existing Registry subkeys
+            // The keys will be different for each user, so each user can customize this screensaver
+            Microsoft.Win32.RegistryKey stringKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("SOFTWARE\\Demo_ScreenSaver");
+            Microsoft.Win32.RegistryKey numericKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("SOFTWARE\\Demo2_ScreenSaver");
+
+            string optionalUrl;
+            string colemanUrl;
+            int channelIndex = cmbColeman.SelectedIndex;
+            int channel2Index = cmbOtherChannel.SelectedIndex;
+            int intervalIndex = cmbInterval.SelectedIndex;
+
+            //get the selected index of the cmbColeman and assign to it a url
+            if (channelIndex == -1)
             {
-                textBox.Text = "Our Screensaver";
+                //if there was no index previously selected, default to the student channel
+               // url = "none";
+                colemanUrl = "http://172.16.25.167:8080/datafiles/StudentChannel.xml";
+                stringKey.SetValue("channelUrl", colemanUrl);
+                stringKey.SetValue("selectedChannel", 0);
             }
-            else
+            if (channelIndex == 0)
             {
-               textBox.Text = (string)key.GetValue("text");
+                colemanUrl = "http://172.16.25.167:8080/datafiles/StudentChannel.xml";
+                stringKey.SetValue("channelUrl", colemanUrl);
+                numericKey.SetValue("selectedChannel", channelIndex);
             }
-            if ((string)key.GetValue("url") == "")
+            if (channelIndex == 1)
             {
-                urlTextBox.Text = "Please enter a url";
+                colemanUrl = "http://172.16.25.167:8080/datafiles/FacultyChannel.xml";
+                stringKey.SetValue("channelUrl", colemanUrl);
+                numericKey.SetValue("selectedChannel", channelIndex);
             }
-            else
+            if (channelIndex == 2)
             {
-                urlTextBox.Text = (string)key.GetValue("url");
+                colemanUrl = "http://172.16.25.167:8080/datafiles/GenericChannel.xml";
+                stringKey.SetValue("channelUrl", colemanUrl);
+                numericKey.SetValue("selectedChannel", channelIndex);
+            }
+            
+        
+            //get the selected index of cmbOtherChannel and assign it to a url
+            if (channel2Index == -1)
+            {
+                //if there was no index previously selected, default to the union tribune
+                optionalUrl = "http://www.utsandiego.com/rss/headlines/metro/";
+                stringKey.SetValue("channel2Url", optionalUrl);
+                stringKey.SetValue("selectedChannel2", 0);
+            }
+            if (channel2Index == 0)
+            {
+                optionalUrl = "http://172.16.25.167:8080/datafiles/StudentChannel.xml";
+                stringKey.SetValue("channel2Url", optionalUrl);
+                numericKey.SetValue("selectedChannel2", channel2Index);
+            }
+            if (channel2Index == 1)
+            {
+                optionalUrl = "http://172.16.25.167:8080/datafiles/FacultyChannel.xml";
+                stringKey.SetValue("channel2Url", optionalUrl);
+                numericKey.SetValue("selectedChannel2", channel2Index);
+            }
+            if (channel2Index == 2)
+            {
+                optionalUrl = "http://www.utsandiego.com/rss/headlines/metro/";
+                stringKey.SetValue("channel2Url", optionalUrl);
+                numericKey.SetValue("selectedChannel2", channel2Index);
+            }
+            if (channel2Index == 3)
+            {
+                optionalUrl = "http://feeds.feedburner.com/cnet/tcoc?format=xml";
+                stringKey.SetValue("channel2Url", optionalUrl);
+                numericKey.SetValue("selectedChannel2", channel2Index);
             }
 
-            Microsoft.Win32.RegistryKey intervalKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("SOFTWARE\\Demo2_ScreenSaver");
-            int interval = (int)intervalKey.GetValue("interval");
-            if (interval == -1)
+            //if there was no selection made on the intervalComboBox, default to index 0
+            if (intervalIndex == -1)
             {
-                intervalComboBox.SelectedIndex = 0;
+                numericKey.SetValue("interval", 0);
             }
             else
             {
-                intervalComboBox.SelectedIndex = interval;
+                //otherwise, set the value in the Registry to the selected index
+                numericKey.SetValue("interval", (int)cmbInterval.SelectedIndex);
             }
+	    }
+
+	    private void loadSettings()
+	    {
+
+            //get the ticker interval value stored in the Registry
+            Microsoft.Win32.RegistryKey stringKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("SOFTWARE\\Demo_ScreenSaver");
+            Microsoft.Win32.RegistryKey numericKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("SOFTWARE\\Demo2_ScreenSaver");
+
+            string channelUrl;
+            string channel2Url;
+            int interval;
+            int channelIndex;
+            int channel2Index;
+
+            try
+            {
+                channelUrl = (string)stringKey.GetValue("channelUrl");
+                channel2Url = (string)stringKey.GetValue("channel2Url");
+                interval = (int)numericKey.GetValue("interval");
+                channelIndex = (int)numericKey.GetValue("selectedChannel");
+                channel2Index = (int)numericKey.GetValue("selectedChannel2");
+            }
+            catch (Exception r)
+            {
+                stringKey.SetValue("channelUrl", "http://172.16.25.167:8080/datafiles/StudentChannel.xml");
+                stringKey.SetValue("channel2Url", "http://www.utsandiego.com/rss/headlines/metro/");
+                numericKey.SetValue("interval", 0);
+                numericKey.SetValue("selectedChannel", 0);
+                numericKey.SetValue("selectedChannel2", 0);
+
+                channelUrl = (string)stringKey.GetValue("channelUrl");
+                channel2Url = (string)stringKey.GetValue("channel2Url");
+                interval = (int)numericKey.GetValue("interval");
+                channelIndex = (int)numericKey.GetValue("selectedChannel");
+                channel2Index = (int)numericKey.GetValue("selectedChannel2");
+                MessageBox.Show(r.Message);
+            }
+
+            //set the comboboxes to the previously selected indexes
+            cmbInterval.SelectedIndex = interval;
+            cmbColeman.SelectedIndex = channelIndex;
+            cmbOtherChannel.SelectedIndex = channel2Index;
+
+            //cmbInterval.SelectedIndex = 0;
+            //cmbColeman.SelectedIndex = 0;
+            //cmbOtherChannel.SelectedIndex = 0;
+
+            //////if the intervalComboBox had nothing selected, default to index 0
+            //if (interval == -1 || interval == 0)
+            //{
+            //    cmbInterval.SelectedIndex = 0;
+            //}
+            //else
+            //{
+            //    cmbInterval.SelectedIndex = interval; 
+            //}
+
+            ////if the channelComboBox had nothing selected, default to index 0
+            //if (channelIndex == -1 || channelIndex == 0)
+            //{
+            //    cmbColeman.SelectedIndex = 0;
+            //}
+            //else
+            //{
+            //    cmbColeman.SelectedIndex = channelIndex;  
+            //}
+
+            ////if nothing was previously selected, default to 0
+            //if (channel2Index == -1 || channel2Index == 0)
+            //{
+            //    cmbOtherChannel.SelectedIndex = 0;
+            //}
+            //else
+            //{
+            //    cmbOtherChannel.SelectedIndex = channel2Index;
+            //}
+            ////if there were no registry entries for the channels, default to student and union tribune
+            //if (channelUrl == "" || channelUrl == null)
+            //{
+            //    channelUrl = "http://172.16.25.167:8080/datafiles/StudentChannel.xml";
+            //}
+            //if (channel2Url == "" || channel2Url == null)
+            //{
+            //    channel2Url = "http://www.utsandiego.com/rss/headlines/metro/";
+            //}
 	    }
 
         //saves the settings and closes the form when the OK button is clicked
         private void okButton_Click(object sender, EventArgs e)
         {
-            SaveSettings();
+            saveSettings();
 	        Close();
         }
         

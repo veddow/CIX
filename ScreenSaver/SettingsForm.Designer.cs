@@ -30,18 +30,19 @@ namespace ScreenSaver
         {
             this.okButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
-            this.lblInstructions = new System.Windows.Forms.Label();
-            this.textBox = new System.Windows.Forms.TextBox();
             this.colorDlg = new System.Windows.Forms.ColorDialog();
-            this.serverUrl = new System.Windows.Forms.Label();
-            this.urlTextBox = new System.Windows.Forms.TextBox();
-            this.intervalLabel = new System.Windows.Forms.Label();
-            this.intervalComboBox = new System.Windows.Forms.ComboBox();
+            this.cmbInterval = new System.Windows.Forms.ComboBox();
+            this.cmbColeman = new System.Windows.Forms.ComboBox();
+            this.lblInfo = new System.Windows.Forms.Label();
+            this.cmbOtherChannel = new System.Windows.Forms.ComboBox();
+            this.lblChannel1 = new System.Windows.Forms.Label();
+            this.lblChannel2 = new System.Windows.Forms.Label();
+            this.lblInterval = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(51, 224);
+            this.okButton.Location = new System.Drawing.Point(85, 258);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(75, 23);
             this.okButton.TabIndex = 0;
@@ -51,7 +52,7 @@ namespace ScreenSaver
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(157, 224);
+            this.cancelButton.Location = new System.Drawing.Point(186, 258);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 1;
@@ -59,83 +60,106 @@ namespace ScreenSaver
             this.cancelButton.UseVisualStyleBackColor = true;
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
-            // lblInstructions
-            // 
-            this.lblInstructions.AutoSize = true;
-            this.lblInstructions.Location = new System.Drawing.Point(57, 22);
-            this.lblInstructions.Name = "lblInstructions";
-            this.lblInstructions.Size = new System.Drawing.Size(167, 13);
-            this.lblInstructions.TabIndex = 2;
-            this.lblInstructions.Text = "Enter the text you\'d like to display:";
-            // 
-            // textBox
-            // 
-            this.textBox.Location = new System.Drawing.Point(12, 49);
-            this.textBox.Name = "textBox";
-            this.textBox.Size = new System.Drawing.Size(265, 20);
-            this.textBox.TabIndex = 3;
-            // 
             // colorDlg
             // 
             this.colorDlg.AnyColor = true;
             // 
-            // serverUrl
+            // cmbInterval
             // 
-            this.serverUrl.AutoSize = true;
-            this.serverUrl.Location = new System.Drawing.Point(57, 100);
-            this.serverUrl.Name = "serverUrl";
-            this.serverUrl.Size = new System.Drawing.Size(168, 13);
-            this.serverUrl.TabIndex = 4;
-            this.serverUrl.Text = "Enter the URL of your web server:";
+            this.cmbInterval.FormattingEnabled = true;
+            this.cmbInterval.Items.AddRange(new object[] {
+            "30 seconds",
+            "60 seconds",
+            "90 seconds",
+            "120 seconds"});
+            this.cmbInterval.Location = new System.Drawing.Point(47, 214);
+            this.cmbInterval.Name = "cmbInterval";
+            this.cmbInterval.Size = new System.Drawing.Size(265, 21);
+            this.cmbInterval.TabIndex = 7;
             // 
-            // urlTextBox
+            // cmbColeman
             // 
-            this.urlTextBox.Location = new System.Drawing.Point(12, 128);
-            this.urlTextBox.Name = "urlTextBox";
-            this.urlTextBox.Size = new System.Drawing.Size(265, 20);
-            this.urlTextBox.TabIndex = 5;
+            this.cmbColeman.FormattingEnabled = true;
+            this.cmbColeman.Items.AddRange(new object[] {
+            "Student Feed",
+            "Faculty Feed",
+            "Generic Feed"});
+            this.cmbColeman.Location = new System.Drawing.Point(47, 71);
+            this.cmbColeman.Name = "cmbColeman";
+            this.cmbColeman.Size = new System.Drawing.Size(265, 21);
+            this.cmbColeman.TabIndex = 8;
             // 
-            // intervalLabel
+            // lblInfo
             // 
-            this.intervalLabel.AutoSize = true;
-            this.intervalLabel.Location = new System.Drawing.Point(28, 180);
-            this.intervalLabel.Name = "intervalLabel";
-            this.intervalLabel.Size = new System.Drawing.Size(101, 13);
-            this.intervalLabel.TabIndex = 6;
-            this.intervalLabel.Text = "Select ticker speed:";
+            this.lblInfo.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblInfo.Location = new System.Drawing.Point(12, 17);
+            this.lblInfo.Name = "lblInfo";
+            this.lblInfo.Size = new System.Drawing.Size(333, 35);
+            this.lblInfo.TabIndex = 9;
+            this.lblInfo.Text = "Which news feeds would you like to subscribe to?";
+            this.lblInfo.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
-            // intervalComboBox
+            // cmbOtherChannel
             // 
-            this.intervalComboBox.FormattingEnabled = true;
-            this.intervalComboBox.Items.AddRange(new object[] {
-            "1 second",
-            "2 seconds",
-            "3 seconds",
-            "4 seconds",
-            "5 seconds"});
-            this.intervalComboBox.Location = new System.Drawing.Point(141, 177);
-            this.intervalComboBox.Name = "intervalComboBox";
-            this.intervalComboBox.Size = new System.Drawing.Size(121, 21);
-            this.intervalComboBox.TabIndex = 7;
+            this.cmbOtherChannel.FormattingEnabled = true;
+            this.cmbOtherChannel.Items.AddRange(new object[] {
+            "Student Feed",
+            "Faculty Feed",
+            "Union Tribune Local News",
+            "CNET News"});
+            this.cmbOtherChannel.Location = new System.Drawing.Point(47, 125);
+            this.cmbOtherChannel.Name = "cmbOtherChannel";
+            this.cmbOtherChannel.Size = new System.Drawing.Size(265, 21);
+            this.cmbOtherChannel.TabIndex = 10;
+            // 
+            // lblChannel1
+            // 
+            this.lblChannel1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblChannel1.Location = new System.Drawing.Point(47, 47);
+            this.lblChannel1.Name = "lblChannel1";
+            this.lblChannel1.Size = new System.Drawing.Size(265, 23);
+            this.lblChannel1.TabIndex = 11;
+            this.lblChannel1.Text = "Coleman Channel";
+            this.lblChannel1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
+            // lblChannel2
+            // 
+            this.lblChannel2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblChannel2.Location = new System.Drawing.Point(47, 101);
+            this.lblChannel2.Name = "lblChannel2";
+            this.lblChannel2.Size = new System.Drawing.Size(265, 23);
+            this.lblChannel2.TabIndex = 12;
+            this.lblChannel2.Text = "Other Channel";
+            this.lblChannel2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
+            // lblInterval
+            // 
+            this.lblInterval.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblInterval.Location = new System.Drawing.Point(46, 190);
+            this.lblInterval.Name = "lblInterval";
+            this.lblInterval.Size = new System.Drawing.Size(265, 23);
+            this.lblInterval.TabIndex = 13;
+            this.lblInterval.Text = "Select Article Rotation Speed";
+            this.lblInterval.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(292, 266);
-            this.Controls.Add(this.intervalComboBox);
-            this.Controls.Add(this.intervalLabel);
-            this.Controls.Add(this.urlTextBox);
-            this.Controls.Add(this.serverUrl);
-            this.Controls.Add(this.textBox);
-            this.Controls.Add(this.lblInstructions);
+            this.ClientSize = new System.Drawing.Size(357, 298);
+            this.Controls.Add(this.lblInterval);
+            this.Controls.Add(this.lblChannel2);
+            this.Controls.Add(this.lblChannel1);
+            this.Controls.Add(this.cmbOtherChannel);
+            this.Controls.Add(this.lblInfo);
+            this.Controls.Add(this.cmbColeman);
+            this.Controls.Add(this.cmbInterval);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
             this.Name = "SettingsForm";
-            this.Text = "Screen Saver Settings";
+            this.Text = "CIX Settings";
             this.Load += new System.EventHandler(this.SettingsForm_Load);
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -143,12 +167,13 @@ namespace ScreenSaver
 
         private System.Windows.Forms.Button okButton;
         private System.Windows.Forms.Button cancelButton;
-        private System.Windows.Forms.Label lblInstructions;
-        private System.Windows.Forms.TextBox textBox;
         private System.Windows.Forms.ColorDialog colorDlg;
-        private System.Windows.Forms.Label serverUrl;
-        private System.Windows.Forms.TextBox urlTextBox;
-        private System.Windows.Forms.Label intervalLabel;
-        private System.Windows.Forms.ComboBox intervalComboBox;
+        private System.Windows.Forms.ComboBox cmbInterval;
+        private System.Windows.Forms.ComboBox cmbColeman;
+        private System.Windows.Forms.Label lblInfo;
+        private System.Windows.Forms.ComboBox cmbOtherChannel;
+        private System.Windows.Forms.Label lblChannel1;
+        private System.Windows.Forms.Label lblChannel2;
+        private System.Windows.Forms.Label lblInterval;
     }
 }
