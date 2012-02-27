@@ -72,7 +72,7 @@ namespace ScreenSaver
                 //if there was no index previously selected, default to the union tribune
                 optionalUrl = "http://www.utsandiego.com/rss/headlines/metro/";
                 stringKey.SetValue("channel2Url", optionalUrl);
-                stringKey.SetValue("selectedChannel2", 0);
+                stringKey.SetValue("selectedChannel2", 2);
             }
             if (channel2Index == 0)
             {
@@ -138,7 +138,7 @@ namespace ScreenSaver
                 stringKey.SetValue("channel2Url", "http://www.utsandiego.com/rss/headlines/metro/");
                 numericKey.SetValue("interval", 0);
                 numericKey.SetValue("selectedChannel", 0);
-                numericKey.SetValue("selectedChannel2", 0);
+                numericKey.SetValue("selectedChannel2", 2);
 
                 channelUrl = (string)stringKey.GetValue("channelUrl");
                 channel2Url = (string)stringKey.GetValue("channel2Url");

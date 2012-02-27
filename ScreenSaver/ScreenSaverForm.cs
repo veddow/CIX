@@ -58,6 +58,18 @@ namespace ScreenSaver
                     _description = value;
                 }
             }
+            private string _date;
+            public string date
+            {
+                get
+                {
+                    return _date;
+                }
+                set
+                {
+                    _date = value;
+                }
+            }
         }
 
         public class Conditions
@@ -125,8 +137,10 @@ namespace ScreenSaver
         private Point mouseLocation;
         int optionalItemCounter;
         int colemanItemCounter;
+        int eventItemCounter;
         List<NewsItem> colemanItems = new List<NewsItem>();
         List<NewsItem> optionalItems = new List<NewsItem>();
+        List<NewsItem> eventItems = new List<NewsItem>();
 
 
         //constructor that sets the form's bounds
@@ -142,7 +156,6 @@ namespace ScreenSaver
         public ScreenSaverForm(IntPtr PreviewHandle)
         {
             InitializeComponent();
-            //LoadSettings();
 
             //set the preview window as the parent of this window
             SetParent(this.Handle, PreviewHandle);
@@ -157,10 +170,30 @@ namespace ScreenSaver
             Size = parentRect.Size;
             Location = new Point(0, 0);
 
-            //makes the text smaller for the preview screen
-            lblTitle2.Font = new System.Drawing.Font("Calisto MT", 6);
-            lblDescription2.Font = new System.Drawing.Font("Calisto MT", 6);
-
+            lblEventsHeader.Font = new System.Drawing.Font("Calisto MT", 8);
+            lblEventsHeader.TextAlign = ContentAlignment.TopLeft;
+            
+            //lblTitle2.Font = new System.Drawing.Font("Calisto MT", 6);
+            //lblDescription2.Font = new System.Drawing.Font("Calisto MT", 6);
+            //pnlArticle1.Visible = false;
+            //lblTitle1.Visible = false;
+            //lblTitle2.Visible = false;
+            //lblDescription1.Visible = false;
+            //lblDescription2.Visible = false;
+            //lblCurrentWeather.Visible = false;
+            //lblHigh.Visible = false;
+            //lblLow.Visible = false;
+            //lblTomorrowStatus.Visible = false;
+            //lblTomorrowTemps.Visible = false;
+            //lblWeatherHeader.Visible = false;
+            //lblWeatherStatus.Visible = false;
+            //picWeatherIcon.Visible = false;
+            //pnlArticle2.Visible = false;
+            //analogClock.Visible = false;
+            //pnlEvents.Visible = false;
+            //pnlWeather.Visible = false;
+            //grpTomorrow.Visible = false;
+            //picHeader.Visible = false;
             previewMode = true;
         }
 
@@ -278,6 +311,98 @@ namespace ScreenSaver
             optionalItemCounter = 1;
         }
 
+        //reads and returns the XML file from the Events channel
+        private Stream getEvents()
+        {
+                //prepare the web page we will be asking for
+            HttpWebRequest request = (HttpWebRequest)
+                WebRequest.Create("http://172.16.25.167:8080/datafiles/Events.xml");
+
+            //execute the request
+            HttpWebResponse response = (HttpWebResponse)
+                request.GetResponse();
+
+            //read data via the response stream
+            Stream eventsStream = response.GetResponseStream();
+
+            //return the xml data in the form of a stream
+            return eventsStream;
+        }
+
+        private void readEvents()
+        {
+            string title;
+            string link;
+            string description;
+            string date;
+
+            //creates a new XmlTextReader object called reader using stream returned by getNews()
+            XmlTextReader reader = new XmlTextReader(getEvents());
+
+            while (reader.Read())
+            {
+                if (reader.NodeType == XmlNodeType.Element)
+                {
+                    switch (reader.Name)
+                    {
+                        case "title":
+                            title = reader.ReadString();
+                            break;
+                        case "link":
+                            link = reader.ReadString();
+                            break;
+                        case "description":
+                            description = reader.ReadString();
+                            break;
+                        case "pubDate":
+                            date = reader.ReadString();
+                            break;
+                    }
+                }
+
+                if (reader.Name == "item")
+                {
+                    //create a new item to be added to the List of NewsItems
+                    NewsItem item = new NewsItem();
+                    while (!((reader.Name == "item") &&
+                                (reader.NodeType == XmlNodeType.EndElement)) &&
+                                    reader.Read())
+                    {
+                        if (reader.NodeType == XmlNodeType.Element)
+                        {
+                            //populate item's title, description and link properties
+                            switch (reader.Name.ToLower())
+                            {
+                                case "title":
+                                    item.title = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "description":
+                                    item.description = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "link":
+                                    item.link = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "pubDate":
+                                    item.date = ignoreHTML(reader.ReadString());
+                                    break;
+                            }
+                        }
+                    }
+                    //add item to the List of NewsItems
+                    eventItems.Add(item);
+                }
+            }
+            //display the description of the first three articles
+            //the most recent items are placed at the beginning of the collection
+            lblEvents1.Text = "* "+ eventItems[eventItemCounter].description.ToString();
+            eventItemCounter = 1;
+            lblEvents2.Text = "* " + eventItems[eventItemCounter].description.ToString();
+            eventItemCounter = 2;
+            lblEvents3.Text = "* " + eventItems[eventItemCounter].description.ToString();
+            eventItemCounter = 3;
+            
+        }
+
         //Reads and returns the XML file from the specified URL
         private Stream getColemanNews()
         {
@@ -322,6 +447,7 @@ namespace ScreenSaver
             string title;
             string link;
             string description;
+            string date;
 
             //creates a new XmlTextReader object called reader using stream returned by getNews()
             XmlTextReader reader = new XmlTextReader(getColemanNews());
@@ -340,6 +466,9 @@ namespace ScreenSaver
                             break;
                         case "description":
                             description = reader.ReadString();
+                            break;
+                        case "pubDate":
+                            date = (string)reader.ReadString();
                             break;
                     }
                 }
@@ -365,6 +494,9 @@ namespace ScreenSaver
                                     break;
                                 case "link":
                                     item.link = ignoreHTML(reader.ReadString());
+                                    break;
+                                case "pubDate":
+                                    item.date = ignoreHTML(reader.ReadString());
                                     break;
                             }
                         }
@@ -548,19 +680,26 @@ namespace ScreenSaver
                 //interval holds the selectedIndex of intervalComboBox
                 //configuration settings allow user to set rotation speed in 30 second intervals, so
                 //add 1 to the index and multiply by 30000 to get the desired number of milliseconds
-               moveTimer.Interval = 5000 * (interval + 1);
+               moveTimer.Interval = 30000 * (interval + 1);
+            }
+            try
+            {
+                readEvents();
+            }
+            catch (Exception ev)
+            {
+                lblEvents1.ForeColor = System.Drawing.Color.White;
+                lblEvents1.Text = "Error connecting to the Events feed";
             }
             try
             {
                 readOptionalNews();
             }
-            
             catch (Exception of)
             {
                 lblDescription2.ForeColor = System.Drawing.Color.White;
                 lblDescription2.Text = "Error connecting to this news feed";
                 lblTitle2.Visible = false;
-                MessageBox.Show(of.Message);
             }
             try
             {
@@ -571,7 +710,6 @@ namespace ScreenSaver
                 lblDescription1.ForeColor = System.Drawing.Color.White;
                 lblDescription1.Text = "Error connecting to this news feed";
                 lblTitle1.Visible = false;
-                MessageBox.Show(cf.Message);
             }
             try
             {
@@ -587,7 +725,6 @@ namespace ScreenSaver
                
                 lblHigh.Visible = false;
                 lblLow.Visible = false;
-                MessageBox.Show(w.Message);
             }
             
             moveTimer.Tick += new EventHandler(moveTimer_Tick);
@@ -603,8 +740,9 @@ namespace ScreenSaver
         //will also update the weather
         private void moveTimer_Tick(object sender, System.EventArgs e)
         {
-            int maxIndex = (colemanItems.Count - 1);
-            int max = (optionalItems.Count - 1);
+            int colemanMaxCount = (colemanItems.Count - 1);
+            int otherItemsMaxCount = (optionalItems.Count - 1);
+            int eventsMaxCount = (eventItems.Count - 1);
 
             try
             {
@@ -623,7 +761,7 @@ namespace ScreenSaver
                 MessageBox.Show(w.Message);
             }
 
-            if (optionalItemCounter > max)
+            if (optionalItemCounter > otherItemsMaxCount)
             {
                 optionalItemCounter = 0;
             }
@@ -634,7 +772,7 @@ namespace ScreenSaver
                 optionalItemCounter++;
             }
 
-            if (colemanItemCounter > maxIndex)
+            if (colemanItemCounter > colemanMaxCount)
             {
                 colemanItemCounter = 0;
             } 
@@ -643,7 +781,37 @@ namespace ScreenSaver
                 lblTitle1.Text = colemanItems[colemanItemCounter].title.ToString();
                 lblDescription1.Text = colemanItems[colemanItemCounter].description.ToString();
                 colemanItemCounter++;
-            }  
+            }
+
+            if (eventItemCounter > eventsMaxCount)
+            {
+                eventItemCounter = 0;
+            }
+            else
+            {
+                lblEvents1.Text = "* " + eventItems[eventItemCounter].description.ToString();
+                eventItemCounter++;
+            }
+            if (eventItemCounter > eventsMaxCount)
+            {
+                eventItemCounter = 0;
+            }
+            else
+            {
+                lblEvents2.Text = "* " + eventItems[eventItemCounter].description.ToString();
+                eventItemCounter++;
+            }
+            if (eventItemCounter > eventsMaxCount)
+            {
+                eventItemCounter = 0;
+            }
+            else
+            {
+                lblEvents3.Text = "* " + eventItems[eventItemCounter].description.ToString();
+                eventItemCounter++;
+            }
+
+
         }
 
         //terminates the screensaver when the mouse is moved more than 5 points
@@ -681,6 +849,11 @@ namespace ScreenSaver
             {
                 Application.Exit();
             }
+        }
+
+        private void analogClock_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

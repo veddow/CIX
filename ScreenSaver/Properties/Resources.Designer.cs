@@ -157,5 +157,12 @@ namespace ScreenSaver.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        internal static System.Drawing.Bitmap transparentLogo {
+            get {
+                object obj = ResourceManager.GetObject("transparentLogo", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }

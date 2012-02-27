@@ -80,10 +80,11 @@ namespace ScreenSaver
             }
 
             //no arguments were passed in through the command line
-            //treat like /c
+            //treat like /s
             else
             {
-                Application.Run(new SettingsForm());
+                DisplayScreenSaver();
+                Application.Run();
             }
         }
 

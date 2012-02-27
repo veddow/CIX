@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AnalogClock));
             this.tmrAnalogClock = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
@@ -39,9 +40,10 @@
             // 
             // AnalogClock
             // 
-
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.Color.LightSteelBlue;
+            this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.MinimumSize = new System.Drawing.Size(50, 50);
             this.Name = "AnalogClock";
             this.Resize += new System.EventHandler(this.AnalogClock_Resize);
